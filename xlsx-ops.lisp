@@ -8,10 +8,8 @@
                     (:fuzz :fuzzy-match)
                     (:fifi :file-finder))
   (:export :check-dependencies
-           :xlsx-overview
-           :xlsx-df
-           :df-overview
-           :plateorg-df->map
+           :xlsx->overview
+           :xlsx->df
            ))
 
 (in-package :xlsx-ops)
@@ -21,7 +19,7 @@
   ;; all good
   T)
 
-(defun xlsx-overview (xlsx &key (n-rows 4))
+(defun xlsx->overview (xlsx &key (n-rows 4))
   "generic xlsx summary to orient user for navigation
 args:
   xlsx, #P to a spreadsheet
@@ -83,7 +81,7 @@ args:
 &&& not really tested, it started working immediately after I wrote this. maybe its scared"
   (string-trim '(#\Return) line))
 
-(defun xlsx-df (xlsx &key sheet-index (initial-row 1) )
+(defun xlsx->df (xlsx &key sheet-index (initial-row 1) )
   "open the indicated sheet of the spreadsheet, starting at row
 replace symbols and square-up trailing commas
 return a lispstat dataframe"
@@ -137,45 +135,3 @@ return a lispstat dataframe"
         (file-position out 0) ; back to the top for the read
         (ls:read-csv out)
         ))))
-
-(defun df-overview (df &key column ends)
-  "summarize dataframe for orientation"
-
-  (pprint
-   (ls:column-names df))
-
-  (let (;; row count
-        (r (length (ls:rows df)))
-        ;; col count
-        (c (length (ls:column-names df))))
-    (format t "~&~%row,col:~A,~A~%" r c))
-
-  (when column
-    (print (ls:column df column)))
-
-  (when ends
-    (ls:head df)
-    (ls:tail df)))
-
-(defun plateorg-df->map (df col-codes col-names)
-  "
-ARGS:
-df: lisp-stat dataframe from our plateorganizer file
-col-codes: the symbol of the encoded-names column
-col-names: the symbol of the entry-names column
-DOES:
-extracts columns as vectors
-converts to lists
-zips lists to an alist
-RETS:
-alist mapping encoded-names (ie our encoding) to entry-names
-"
-  (let* (
-         (columns (coerce
-                   (lisp-stat:columns df `(,col-codes ,col-names))
-                   'list))
-
-         (codes (coerce (first columns) 'list))
-         (ids (coerce (second columns) 'list))
-         )
-    (mapcar #'cons codes ids)))
